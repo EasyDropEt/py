@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "py"
+version = "0.1.0"
+description = ""
+authors = ["ffekirnew <ffekirnew0808@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+
+[tool.poetry.group.test.dependencies]
+pytest-cov = "^5.0.0"
+pytest = "^8.3.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
