@@ -12,4 +12,4 @@ Template class for python backend servers.
 - [x] Makefile
 - [x] CI/CD
 - [x] Entry point file
-- [ ] Configfile / Configuration
+- [x] Configfile / Configuration

@@ -3,6 +3,10 @@ import json
 from pika.adapters import BlockingConnection
 from pika.connection import ConnectionParameters, URLParameters
 
+from src.logging_helpers import get_logger
+
+LOG = get_logger()
+
 
 class RabbitMQProducer:
     def __init__(self, queue: str):
@@ -12,12 +16,12 @@ class RabbitMQProducer:
         )
 
     def start(self) -> None:
-        print("Starting producer")
+        LOG.info("Starting producer")
         self._channel = self._connection.channel()
         self._channel.queue_declare(queue=self._queue, durable=True)
 
     def stop(self) -> None:
-        print("Stopping producer...")
+        LOG.info("Stopping producer...")
         self._connection.close()
 
     def publish(self, message: dict) -> None:
@@ -25,7 +29,7 @@ class RabbitMQProducer:
         self._channel.basic_publish(
             exchange="", routing_key=self._queue, body=json.dumps(message)
         )
-        print(f" [x] Sent '{message}'")
+        LOG.info(f" [x] Sent '{message}'")
 
     def _connect_with_connection_parameters(
         self, host: str, port: int

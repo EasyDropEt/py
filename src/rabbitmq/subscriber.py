@@ -4,10 +4,14 @@ from pika import ConnectionParameters, URLParameters, spec
 from pika.adapters import BlockingConnection
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.logging_helpers import get_logger
+
 Callback = Annotated[
     Callable[[BlockingChannel, spec.Basic.Deliver, spec.BasicProperties, bytes], None],
     "A callback function that receives a message from the queue.",
 ]
+
+LOG = get_logger()
 
 
 class RabbitMQSubscriber:
@@ -19,7 +23,7 @@ class RabbitMQSubscriber:
         )
 
     def start(self) -> None:
-        print("Starting subscriber...")
+        LOG.info("Starting subscriber...")
         self._channel = self._connection.channel()
         self._channel.queue_declare(queue=self._queue, durable=True)
 
@@ -29,7 +33,7 @@ class RabbitMQSubscriber:
         self._channel.start_consuming()
 
     def stop(self) -> None:
-        print("Stopping subscriber")
+        LOG.info("Stopping subscriber")
         self._connection.close()
 
     def _connect_with_connection_parameters(
@@ -49,4 +53,4 @@ def example_callback(
     properties: spec.BasicProperties,
     body: bytes,
 ) -> None:
-    print(f" [x] Received '{str(body)}'")
+    LOG.info(f" [x] Received '{str(body)}'")
