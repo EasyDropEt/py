@@ -18,7 +18,7 @@ class Exceptions(StrEnum):
     RequestTimeoutException = "RequestTimeoutException"
 
 
-ERROR_CODES = {
+ERROR_CODES: dict[Exceptions, int] = {
     Exceptions.BadRequestException: 400,
     Exceptions.InternalServerException: 500,
     Exceptions.NotFoundException: 404,

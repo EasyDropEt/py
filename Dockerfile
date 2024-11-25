@@ -1,18 +1,17 @@
-FROM python:3.10.0-alpine3.13
-
-RUN addgroup -S app && adduser -S app -G app
+FROM python:3.12
 
 WORKDIR /app
-COPY requirements.txt .
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install poetry
 
-COPY . .
+COPY pyproject.toml poetry.lock /app/
 
-RUN chown -R app:app /app
+RUN poetry export --without-hashes --format=requirements.txt > requirements.txt
 
-EXPOSE 5000
+RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
 
-USER app
+COPY . /app
+
+EXPOSE 8000
 
 CMD ["make", "run"]
