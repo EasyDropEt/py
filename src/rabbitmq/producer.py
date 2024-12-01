@@ -4,6 +4,7 @@ from pika.adapters import BlockingConnection
 from pika.connection import ConnectionParameters, URLParameters
 
 from src.logging_helpers import get_logger
+from src.typing.config import TestMessage
 
 LOG = get_logger()
 
@@ -14,7 +15,7 @@ class RabbitMQProducer:
         self._connection = self._connect_with_url_parameters("url")
 
     def start(self) -> None:
-        LOG.info("Starting producer")
+        LOG.info("Starting producer...")
         self._channel = self._connection.channel()
         self._channel.queue_declare(queue=self._queue, durable=True)
 
@@ -22,7 +23,7 @@ class RabbitMQProducer:
         LOG.info("Stopping producer...")
         self._connection.close()
 
-    def publish(self, message: dict) -> None:
+    def publish(self, message: TestMessage) -> None:
         assert "_channel" in self.__dict__, "Producer has not been started"
         self._channel.basic_publish(
             exchange="", routing_key=self._queue, body=json.dumps(message)

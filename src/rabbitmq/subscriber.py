@@ -1,23 +1,29 @@
-from typing import Annotated, Callable
+import json
+from typing import Annotated, Callable, TypeVar
 
 from pika import ConnectionParameters, URLParameters, spec
 from pika.adapters import BlockingConnection
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.logging_helpers import get_logger
+from src.typing.config import TestMessage
 
-Callback = Annotated[
-    Callable[[BlockingChannel, spec.Basic.Deliver, spec.BasicProperties, bytes], None],
-    "A callback function that receives a message from the queue.",
+T = TypeVar("T")
+CallbackFunction = Annotated[
+    Callable[[T], None], "A callback function that receives a message from the queue."
 ]
 
 LOG = get_logger()
 
 
 class RabbitMQSubscriber:
-    def __init__(self, queue: str, callback: Callback) -> None:
+    def __init__(
+        self,
+        queue: str,
+        callback_function: CallbackFunction,
+    ) -> None:
         self._queue = queue
-        self._callback = callback
+        self._callback_function = callback_function
         self._connection = self._connect_with_url_parameters("url")
 
     def start(self) -> None:
@@ -44,11 +50,24 @@ class RabbitMQSubscriber:
         connection_parameters = URLParameters(url)
         return BlockingConnection(connection_parameters)
 
+    def _callback(
+        self,
+        channel: BlockingChannel,
+        method: spec.Basic.Deliver,
+        properties: spec.BasicProperties,
+        body: bytes,
+    ) -> None:
+        try:
+            message: TestMessage = json.loads(body.decode("utf-8"))
 
-def example_callback(
-    channel: BlockingChannel,
-    method: spec.Basic.Deliver,
-    properties: spec.BasicProperties,
-    body: bytes,
-) -> None:
-    LOG.info(f" [x] Received '{str(body)}'")
+            self._callback_function(message)
+
+        except json.JSONDecodeError as e:
+            LOG.error(f"Failed to decode message: {e}")
+
+        except KeyError as e:
+            LOG.error(f"Missing key in message: {e}")
+
+
+def example_callback(message: TestMessage) -> None:
+    LOG.info(f" [x] Received '{message}'")
