@@ -13,3 +13,4 @@ Template class for python backend servers.
 - [x] CI/CD
 - [x] Entry point file
 - [x] Configfile / Configuration
+- [x] Websockets

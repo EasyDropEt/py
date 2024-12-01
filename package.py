@@ -1,8 +1,11 @@
 from threading import Thread
 
+from src.logging_helpers import get_logger
 from src.rabbitmq.producer import RabbitMQProducer
 from src.rabbitmq.subscriber import RabbitMQSubscriber, example_callback
 from src.webapi.api_request_handler import APIRequestHandler
+
+LOG = get_logger()
 
 
 class Package:
@@ -15,7 +18,7 @@ class Package:
         self._rabbitmq_producer.start()
         self._rabbitmq_subscriber.start()
 
-        # self._rabbitmq_producer.publish({"message": "Hello, world!"})
+        self._rabbitmq_producer.publish({"title": "Hello, world!"})
 
     def start_api(self) -> None:
         self._api.start()
@@ -28,7 +31,7 @@ class Package:
 
 if __name__ == "__main__":
     main = Package()
-    worker_thread = Thread(target=main.start_services, daemon=True)
+    worker_thread = Thread(target=main.start_services, daemon=False)
     worker_thread.start()
 
     main.start_api()

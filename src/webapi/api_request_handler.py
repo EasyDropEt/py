@@ -1,5 +1,5 @@
 import uvicorn
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, WebSocket
 from starlette.responses import JSONResponse
 
 from src.api_helpers import GenericResponse
@@ -14,11 +14,8 @@ class APIRequestHandler:
     def __init__(self) -> None:
         self._app = FastAPI()
 
-        self._app.add_api_route(
-            "/test",
-            self._read_root,
-            response_model=TestResponseDto,
-        )
+        self._app.add_api_route("/test", self._rest)
+        self._app.add_websocket_route("/ws", self._websocket)
 
     def start(self) -> None:
         LOG.info("Starting api...")
@@ -28,9 +25,15 @@ class APIRequestHandler:
     def stop(self) -> None:
         LOG.info("API does not need to be stopped...")
 
-    def _read_root(self, request_dto: TestRequestDto) -> TestResponseDto:
+    async def _rest(self, request_dto: TestRequestDto) -> TestResponseDto:
         LOG.info(request_dto)
         return {"name": "World"}
+
+    async def _websocket(self, websocket: WebSocket) -> None:
+        await websocket.accept()
+        while True:
+            data = await websocket.receive_text()
+            await websocket.send_text(f"Message text was: {data}")
 
     def _contain_exceptions(self) -> None:
         @self._app.exception_handler(ApplicationException)
