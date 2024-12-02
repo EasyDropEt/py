@@ -14,11 +14,13 @@ class Package:
         self._rabbitmq_subscriber = RabbitMQSubscriber("test_queue", example_callback)
         self._api = APIRequestHandler()
 
-    def start_services(self) -> None:
+    def start_producer(self) -> None:
         self._rabbitmq_producer.start()
-        self._rabbitmq_subscriber.start()
 
         self._rabbitmq_producer.publish({"title": "Hello, world!"})
+
+    def start_subscriber(self) -> None:
+        self._rabbitmq_subscriber.start()
 
     def start_api(self) -> None:
         self._api.start()
@@ -31,7 +33,10 @@ class Package:
 
 if __name__ == "__main__":
     main = Package()
-    worker_thread = Thread(target=main.start_services, daemon=False)
-    worker_thread.start()
 
+    subscriber_thread = Thread(target=main.start_subscriber, daemon=False)
+    producer_thread = Thread(target=main.start_producer, daemon=False)
+
+    subscriber_thread.start()
+    producer_thread.start()
     main.start_api()
