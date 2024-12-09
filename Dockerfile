@@ -14,4 +14,5 @@ COPY . /app
 
 EXPOSE 8000
 
-CMD ["make", "run"]
+ENTRYPOINT ["make"]
+CMD ["run"]
