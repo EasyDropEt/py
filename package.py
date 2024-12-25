@@ -1,9 +1,9 @@
 from threading import Thread
 
-from src.logging_helpers import get_logger
-from src.rabbitmq.producer import RabbitMQProducer
-from src.rabbitmq.subscriber import RabbitMQSubscriber, example_callback
-from src.webapi.api_request_handler import APIRequestHandler
+from src.common.logging_helpers import get_logger
+from src.infrastructure.rabbitmq.producer import RabbitMQProducer
+from src.infrastructure.rabbitmq.subscriber import RabbitMQSubscriber, example_callback
+from src.webapi.api import API
 
 LOG = get_logger()
 
@@ -12,7 +12,7 @@ class Package:
     def __init__(self) -> None:
         self._rabbitmq_producer = RabbitMQProducer("test_queue")
         self._rabbitmq_subscriber = RabbitMQSubscriber("test_queue", example_callback)
-        self._api = APIRequestHandler()
+        self._api = API()
 
     def start_producer(self) -> None:
         self._rabbitmq_producer.start()

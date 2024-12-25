@@ -1,22 +1,20 @@
 import json
-from typing import Annotated, Callable, TypeVar
 
 from pika import ConnectionParameters, URLParameters, spec
 from pika.adapters import BlockingConnection
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.logging_helpers import get_logger
-from src.typing.config import TestMessage
-
-T = TypeVar("T")
-CallbackFunction = Annotated[
-    Callable[[T], None], "A callback function that receives a message from the queue."
-]
+from src.application.contracts.infrastructure.message_queue.abc_subscriber import (
+    ABCSubscriber,
+    CallbackFunction,
+)
+from src.common.logging_helpers import get_logger
+from src.common.typing.config import TestMessage
 
 LOG = get_logger()
 
 
-class RabbitMQSubscriber:
+class RabbitMQSubscriber(ABCSubscriber[TestMessage]):
     def __init__(
         self,
         queue: str,

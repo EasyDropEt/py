@@ -3,13 +3,16 @@ import json
 from pika.adapters import BlockingConnection
 from pika.connection import ConnectionParameters, URLParameters
 
-from src.logging_helpers import get_logger
-from src.typing.config import TestMessage
+from src.application.contracts.infrastructure.message_queue.abc_producer import (
+    ABCProducer,
+)
+from src.common.logging_helpers import get_logger
+from src.common.typing.config import TestMessage
 
 LOG = get_logger()
 
 
-class RabbitMQProducer:
+class RabbitMQProducer(ABCProducer[TestMessage]):
     def __init__(self, queue: str):
         self._queue = queue
         self._connection = self._connect_with_url_parameters("url")
