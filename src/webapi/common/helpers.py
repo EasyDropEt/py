@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import Any, Callable, Generic, Optional, TypeVar
+from typing import Awaitable, Callable, Generic, Optional, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -35,7 +35,9 @@ class GenericResponse(_ApiResponse, Generic[T]):
         }
 
 
-def rest_endpoint(func: Callable[..., Any]) -> Callable[..., Any]:
+def rest_endpoint(
+    func: Callable[..., Awaitable[BaseResponse]]
+) -> Callable[..., Awaitable[GenericResponse]]:
     @wraps(func)
     async def wrapper(*args, **kwargs) -> GenericResponse:
         response = await func(*args, **kwargs)

@@ -13,12 +13,18 @@ LOG = get_logger()
 router = APIRouter(prefix="/some-feature", tags=["Some Feature"])
 
 
-@router.post("/rest")
+@router.get("/get", response_model=GenericResponse[SomeResponseDto])
 @rest_endpoint
-async def rest(
-    request_dto: SomeCreateDto,
-    mediator: Annotated[Mediator, Depends(mediator)],
-) -> GenericResponse[SomeResponseDto]:
+async def get(mediator: Annotated[Mediator, Depends(mediator)]):
+    LOG.info("Satisfying request")
+    return await mediator.send(SomeCommand(dto=SomeCreateDto("Message")))
+
+
+@router.post("/post", response_model=GenericResponse[SomeResponseDto])
+@rest_endpoint
+async def post(
+    request_dto: SomeCreateDto, mediator: Annotated[Mediator, Depends(mediator)]
+):
     LOG.info(f"Satisfying request {request_dto}")
     return await mediator.send(SomeCommand(dto=request_dto))
 
