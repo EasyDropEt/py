@@ -2,6 +2,9 @@ from functools import wraps
 from typing import Any, Callable
 
 from src.common.exception_helpers import ApplicationException, Exceptions
+from src.common.logging_helpers import get_logger
+
+LOG = get_logger()
 
 
 def repository_class(cls: type) -> type:
@@ -21,7 +24,8 @@ def _repository_method(method: Callable[..., Any]) -> Callable:
             return method(*args, **kwargs)
         except ApplicationException as e:
             raise e
-        except Exception:
+        except Exception as e:
+            LOG.error(f"An internal server error occurred: {e}")
             raise ApplicationException(
                 Exceptions.InternalServerException,
                 "An internal server error occurred.",

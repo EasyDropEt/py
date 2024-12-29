@@ -11,12 +11,15 @@ from src.application.features.user.dtos.validators.some_dto_validator import (
 )
 from src.application.features.user.requests.commands.some_command import SomeCommand
 from src.common.exception_helpers import ApplicationException, Exceptions
+from src.common.logging_helpers import get_logger
+
+LOG = get_logger()
 
 
 @request_handler(SomeCommand, BaseResponse[SomeResponseDto])
 class SomeCommandHandler(RequestHandler):
-    def __init__(self, unit_of_work: ABCUnitOfWork):
-        self.unit_of_work = unit_of_work
+    def __init__(self, uow: ABCUnitOfWork):
+        self._uow = uow
 
     async def handle(self, request: SomeCommand) -> BaseResponse[SomeResponseDto]:
         dto_validator = SomeDtoValidator().validate(request.dto)
