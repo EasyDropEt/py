@@ -1,4 +1,5 @@
 import json
+from typing import Generic, TypeVar
 
 from pika.adapters import BlockingConnection
 from pika.connection import ConnectionParameters, URLParameters
@@ -7,17 +8,16 @@ from src.application.contracts.infrastructure.message_queue.abc_producer import 
     ABCProducer,
 )
 from src.common.logging_helpers import get_logger
-from src.common.typing.config import TestMessage
 
 LOG = get_logger()
 
+TMessageSchema = TypeVar("TMessageSchema")
 
-class RabbitMQProducer(ABCProducer[TestMessage]):
-    def __init__(self, queue: str):
+
+class RabbitMQProducer(Generic[TMessageSchema], ABCProducer[TMessageSchema]):
+    def __init__(self, url: str, queue: str):
         self._queue = queue
-        self._connection = self._connect_with_url_parameters(
-            "amqps://khlfoide:1ssIQmbrhyDKUy65YprDVBbIQCaXDF1o@sparrow.rmq.cloudamqp.com/khlfoide"
-        )
+        self._connection = self._connect_with_url_parameters(url)
 
     def start(self) -> None:
         LOG.info("Starting producer...")
@@ -28,7 +28,7 @@ class RabbitMQProducer(ABCProducer[TestMessage]):
         LOG.info("Stopping producer...")
         self._connection.close()
 
-    def publish(self, message: TestMessage) -> None:
+    def publish(self, message: TMessageSchema) -> None:
         assert "_channel" in self.__dict__, "Producer has not been started"
         self._channel.basic_publish(
             exchange="", routing_key=self._queue, body=json.dumps(message)

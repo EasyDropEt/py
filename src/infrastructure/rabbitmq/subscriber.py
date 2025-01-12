@@ -1,4 +1,5 @@
 import json
+from typing import Generic, TypeVar
 
 from pika import ConnectionParameters, URLParameters, spec
 from pika.adapters import BlockingConnection
@@ -9,22 +10,21 @@ from src.application.contracts.infrastructure.message_queue.abc_subscriber impor
     CallbackFunction,
 )
 from src.common.logging_helpers import get_logger
-from src.common.typing.config import TestMessage
 
 LOG = get_logger()
+TMessageSchema = TypeVar("TMessageSchema")
 
 
-class RabbitMQSubscriber(ABCSubscriber[TestMessage]):
+class RabbitMQSubscriber(Generic[TMessageSchema], ABCSubscriber[TMessageSchema]):
     def __init__(
         self,
+        url: str,
         queue: str,
         callback_function: CallbackFunction,
     ) -> None:
         self._queue = queue
         self._callback_function = callback_function
-        self._connection = self._connect_with_url_parameters(
-            "amqps://khlfoide:1ssIQmbrhyDKUy65YprDVBbIQCaXDF1o@sparrow.rmq.cloudamqp.com/khlfoide"
-        )
+        self._connection = self._connect_with_url_parameters(url)
 
     def start(self) -> None:
         LOG.info("Starting subscriber...")
@@ -58,7 +58,7 @@ class RabbitMQSubscriber(ABCSubscriber[TestMessage]):
         body: bytes,
     ) -> None:
         try:
-            message: TestMessage = json.loads(body.decode("utf-8"))
+            message: TMessageSchema = json.loads(body.decode("utf-8"))
 
             self._callback_function(message)
 
@@ -67,7 +67,3 @@ class RabbitMQSubscriber(ABCSubscriber[TestMessage]):
 
         except KeyError as e:
             LOG.error(f"Missing key in message: {e}")
-
-
-def example_callback(message: TestMessage) -> None:
-    LOG.info(f" [x] Received '{message}'")
