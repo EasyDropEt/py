@@ -17,7 +17,6 @@ from src.common.typing.config import Config, TestMessage
 from src.infrastructure.persistence.db_client import DbClient
 from src.infrastructure.persistence.unit_of_work import UnitOfWork
 from src.infrastructure.rabbitmq.producer import RabbitMQProducer
-from src.infrastructure.rabbitmq.subscriber import RabbitMQSubscriber
 
 
 def get_db_client(config: Annotated[Config, Depends(get_config)]) -> DbClient:
@@ -39,17 +38,6 @@ def get_producer(config: Annotated[Config, Depends(get_config)]) -> ABCProducer:
     producer.start()
 
     return producer
-
-
-def get_subscriber(config: Annotated[Config, Depends(get_config)]) -> ABCSubscriber:
-    subscriber = RabbitMQSubscriber[TestMessage](
-        config["rabbitmq_url"],
-        config["rabbitmq_queue"],
-        lambda x: print(x),
-    )
-    subscriber.start()
-
-    return subscriber
 
 
 def mediator(
