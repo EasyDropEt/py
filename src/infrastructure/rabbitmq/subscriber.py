@@ -22,7 +22,9 @@ class RabbitMQSubscriber(ABCSubscriber[TestMessage]):
     ) -> None:
         self._queue = queue
         self._callback_function = callback_function
-        self._connection = self._connect_with_url_parameters("url")
+        self._connection = self._connect_with_url_parameters(
+            "amqps://khlfoide:1ssIQmbrhyDKUy65YprDVBbIQCaXDF1o@sparrow.rmq.cloudamqp.com/khlfoide"
+        )
 
     def start(self) -> None:
         LOG.info("Starting subscriber...")

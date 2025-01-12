@@ -15,7 +15,9 @@ LOG = get_logger()
 class RabbitMQProducer(ABCProducer[TestMessage]):
     def __init__(self, queue: str):
         self._queue = queue
-        self._connection = self._connect_with_url_parameters("url")
+        self._connection = self._connect_with_url_parameters(
+            "amqps://khlfoide:1ssIQmbrhyDKUy65YprDVBbIQCaXDF1o@sparrow.rmq.cloudamqp.com/khlfoide"
+        )
 
     def start(self) -> None:
         LOG.info("Starting producer...")
