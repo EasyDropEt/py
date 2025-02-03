@@ -13,3 +13,6 @@ class ABCSubscriber(Generic[T], metaclass=ABCMeta):
 
     @abstractmethod
     def stop(self) -> None: ...
+
+    @abstractmethod
+    def add_callback(self, callback_function: CallbackFunction) -> None: ...

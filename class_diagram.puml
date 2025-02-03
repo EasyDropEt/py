@@ -1,0 +1,199 @@
+@startuml
+
+' Domain Layer
+class SomeEntity {
+  + id: UUID
+  + name: str
+  + email: str
+  + age: int
+}
+
+
+' Application Layer
+' Common
+class BaseResponse<T> {
+  - is_success: bool
+  - message: str
+  - data: Optional[T]
+  - errors: list[str]
+}
+
+' Contracts
+interface ABCProducer {
+  + start() -> None
+  + stop() -> None
+  + publish(message: str) -> None
+}
+
+interface ABCSubscriber {
+  + start() -> None
+  + stop() -> None
+  + add_callback(callback: CallbackFunction) -> None
+}
+
+interface ABCGenericRepository {
+  + get_all(**filters: Any) -> list[T]
+  + get(**filters: Any) -> T | None
+  + create(entity: T) -> T
+  + update(id: UUID, entity: T) -> bool
+  + delete(id: UUID) -> bool
+}
+
+interface ABCSomeEntityRepository {
+  + get_all() -> list[SomeEntity]
+  + get(id: UUID) -> SomeEntity | None
+  + create(entity: SomeEntity) -> SomeEntity
+  + update(id: UUID, entity: SomeEntity) -> bool
+  + delete(id: UUID) -> bool
+}
+
+interface ABCUnitOfWork {
+  + some_entity_repository  -> ABCSomeEntityRepository
+}
+
+' Features
+interface ABCDtoValidator {
+  + validate(dto: Dto) -> list[str]
+}
+
+class SomeCreateDto {
+  + data: str
+}
+
+class SomeResponseDto {
+  + data: str
+}
+
+class SomeDtoValidator {
+  + validate(dto: SomeCreateDto) -> list[str]
+}
+SomeDtoValidator --|> ABCDtoValidator
+
+class SomeCommandHandler {
+  + handle(command: SomeCommand) -> BaseResponse[SomeResponseDto]
+}
+SomeCommandHandler .. SomeCommand
+SomeCommandHandler o-- SomeDtoValidator
+SomeCommandHandler o-- ABCUnitOfWork
+SomeCommandHandler o-- ABCProducer
+SomeCommandHandler o-- ABCSubscriber
+SomeCommandHandler .. SomeResponseDto
+
+class SomeCommand {
+  + dto: SomeCreateDto
+}
+SomeCommand o-- SomeCreateDto
+
+' Infrastructure Layer
+interface ABCDbClient {
+  + start() -> None
+  + stop() -> None
+}
+
+class DbClient {
+  + __init__(config: Config) -> None
+  + get_collection(collection_name: str) -> Collection
+  + start() -> None
+  + stop() -> None
+}
+DbClient --|> ABCDbClient
+
+class UnitOfWork {
+  + some_entity_repository -> ABCSomeEntityRepository
+}
+UnitOfWork --|> ABCUnitOfWork
+UnitOfWork *-- DbClient
+
+abstract class GenericRepository {
+  + __init__(db_client: ABCDbClient) -> None
+  + get_all(**filters: Any) -> list[T]
+  + get(**filters: Any) -> T | None
+  + create(entity: T) -> T
+  + update(id: UUID, entity: T) -> bool
+  + delete(id: UUID) -> bool
+}
+GenericRepository --|> ABCGenericRepository
+
+class SomeEntityRepository {
+  + __init__(db_client: ABCDbClient) -> None
+  + get_all() -> list[SomeEntity]
+  + get(id: UUID) -> SomeEntity | None
+  + create(entity: SomeEntity) -> SomeEntity
+  + update(id: UUID, entity: SomeEntity) -> bool
+  + delete(id: UUID) -> bool
+}
+SomeEntityRepository --|> ABCSomeEntityRepository
+SomeEntityRepository --|> GenericRepository
+UnitOfWork *-- SomeEntityRepository
+SomeEntityRepository .. SomeEntity
+
+class RabbitMQProducer {
+  + __init__(config: Config) -> None
+  + start() -> None
+  + stop() -> None
+  + publish(message: dict) -> None
+}
+RabbitMQProducer --|> ABCProducer
+
+class RabbitMQSubscriber {
+  + __init__(config: Config) -> None
+  + start() -> None
+  + stop() -> None
+  + add_callback(callback: CallbackFunction) -> None
+}
+RabbitMQSubscriber --|> ABCSubscriber
+
+' Presentation Layer
+class _ApiResponse {
+  - is_success: bool
+  - message: str
+}
+
+class GenericResponse {
+  - data: Any
+  - errors: list[str]
+  + from_base_response(base_response: BaseResponse) -> GenericResponse
+  + to_dict() -> dict
+}
+GenericResponse --|> _ApiResponse
+GenericResponse .. BaseResponse
+
+class DependencySetup {
+  + get_db_client() -> ABCDbClient
+  + get_uow() -> ABCUnitOfWork
+  + get_producer() -> ABCProducer
+  + get_subscriber() -> ABCSubscriber
+  + get_mediator() -> Mediator
+}
+DependencySetup .. ABCDbClient
+DependencySetup .. UnitOfWork
+DependencySetup .. RabbitMQProducer
+DependencySetup .. RabbitMQSubscriber
+DependencySetup .. Mediator
+
+class Mediator {
+  + send(request: Request) -> Response
+  + register_handler(request: Request, handler: Handler) -> None
+}
+Mediator o-- SomeCommand
+Mediator o-- SomeCommandHandler
+
+class SomeFeatureController {
+  + get() -> GenericResponse
+  + post(request_dto: SomeCreateDto) -> GenericResponse
+  + websocket(ws: WebSocket) -> None
+}
+SomeFeatureController .. Mediator
+SomeFeatureController .. GenericResponse
+SomeFeatureController .. DependencySetup
+
+class API {
+  + start() -> None
+  + stop() -> None
+  - _include_routers() -> None
+  - _contain_exceptions() -> None
+}
+API --|> FastAPI
+API o-- SomeFeatureController
+
+@enduml

@@ -20,11 +20,13 @@ class RabbitMQSubscriber(Generic[TMessageSchema], ABCSubscriber[TMessageSchema])
         self,
         url: str,
         queue: str,
-        callback_function: CallbackFunction,
     ) -> None:
         self._queue = queue
-        self._callback_function = callback_function
+        self._callback_functions = []
         self._connection = self._connect_with_url_parameters(url)
+
+    def add_callback(self, callback_function: CallbackFunction) -> None:
+        self._callback_functions.append(callback_function)
 
     def start(self) -> None:
         LOG.info("Starting subscriber...")
@@ -60,7 +62,8 @@ class RabbitMQSubscriber(Generic[TMessageSchema], ABCSubscriber[TMessageSchema])
         try:
             message: TMessageSchema = json.loads(body.decode("utf-8"))
 
-            self._callback_function(message)
+            for callback_function in self._callback_functions:
+                callback_function(message)
 
         except json.JSONDecodeError as e:
             LOG.error(f"Failed to decode message: {e}")

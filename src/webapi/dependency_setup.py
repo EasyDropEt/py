@@ -13,41 +13,57 @@ from src.application.contracts.infrastructure.persistence.abc_unit_of_work impor
     ABCUnitOfWork,
 )
 from src.common.generic_helpers import get_config
+from src.common.singleton_helpers import SingletonMeta
 from src.common.typing.config import Config, TestMessage
 from src.infrastructure.persistence.db_client import DbClient
 from src.infrastructure.persistence.unit_of_work import UnitOfWork
 from src.infrastructure.rabbitmq.producer import RabbitMQProducer
+from src.infrastructure.rabbitmq.subscriber import RabbitMQSubscriber
 
 
-def get_db_client(config: Annotated[Config, Depends(get_config)]) -> DbClient:
-    return DbClient(
-        config["mongo_db_connection_string"],
-        config["db_name"],
-    )
+class DependencySetup(metaclass=SingletonMeta):
+    @staticmethod
+    def get_db_client(config: Annotated[Config, Depends(get_config)]) -> DbClient:
+        return DbClient(
+            config["mongo_db_connection_string"],
+            config["db_name"],
+        )
 
+    @staticmethod
+    def get_uow(
+        db_client: Annotated[DbClient, Depends(get_db_client)]
+    ) -> ABCUnitOfWork:
+        return UnitOfWork(db_client)
 
-def get_uow(db_client: Annotated[DbClient, Depends(get_db_client)]) -> ABCUnitOfWork:
-    return UnitOfWork(db_client)
+    @staticmethod
+    def get_producer(config: Annotated[Config, Depends(get_config)]) -> ABCProducer:
+        producer = RabbitMQProducer[TestMessage](
+            config["rabbitmq_url"],
+            config["rabbitmq_queue"],
+        )
+        producer.start()
 
+        return producer
 
-def get_producer(config: Annotated[Config, Depends(get_config)]) -> ABCProducer:
-    producer = RabbitMQProducer[TestMessage](
-        config["rabbitmq_url"],
-        config["rabbitmq_queue"],
-    )
-    producer.start()
+    @staticmethod
+    def get_subscriber(config: Annotated[Config, Depends(get_config)]) -> ABCSubscriber:
+        subscriber = RabbitMQSubscriber[TestMessage](
+            config["rabbitmq_url"],
+            config["rabbitmq_queue"],
+        )
+        subscriber.start()
 
-    return producer
+        return subscriber
 
+    @staticmethod
+    def get_mediator(
+        uow: Annotated[ABCUnitOfWork, Depends(get_uow)],
+        producer: Annotated[ABCProducer, Depends(get_producer)],
+    ) -> Mediator:
+        mediator = Mediator()
 
-def mediator(
-    uow: Annotated[ABCUnitOfWork, Depends(get_uow)],
-    producer: Annotated[ABCProducer, Depends(get_producer)],
-) -> Mediator:
-    mediator = Mediator()
+        handlers = []
+        for command, handler in handlers:
+            mediator.register_handler(command, handler)
 
-    handlers = []
-    for command, handler in handlers:
-        mediator.register_handler(command, handler)
-
-    return mediator
+        return mediator

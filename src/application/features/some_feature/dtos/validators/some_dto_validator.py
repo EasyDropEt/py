@@ -2,7 +2,7 @@ from src.application.features.common.dto.abc_dto_validator import (
     ABCDtoValidator,
     ValidationResponse,
 )
-from src.application.features.user.dtos.some_create_dto import SomeCreateDto
+from src.application.features.some_feature.dtos.some_create_dto import SomeCreateDto
 
 
 class SomeDtoValidator(ABCDtoValidator[SomeCreateDto]):
